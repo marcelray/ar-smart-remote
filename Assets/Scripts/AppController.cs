@@ -17,8 +17,8 @@ public class AppController : MonoBehaviour
 
     EventSystem _eventSystem;
 
-    Vector3 _touchStartPosition;
-    ObjectHotspot _selectedHotspot;
+    Vector3 _lastTouchPosition;
+    SpatialTarget _selectedTarget;
 
     void Awake()
     {
@@ -37,43 +37,56 @@ public class AppController : MonoBehaviour
     {
         if ( Input.GetMouseButtonDown(0) )
         {
-            // TODO: Check for collision with existing hot spot and select it
+            // Check if user tapped on an existing target
+            RaycastHit raycastHit;
+            Ray ray = _sessionOrigin.camera.ScreenPointToRay( Input.mousePosition );
+            LayerMask layerMask = LayerMask.GetMask( "Targets" );
+            if ( Physics.Raycast(ray, out raycastHit, 20 , layerMask ) )
+            {
+                _selectedTarget = raycastHit.collider.gameObject.GetComponentInParent<SpatialTarget>();
+            }
             // Otherwise, place a new one
-            _selectedHotspot = PlaceNewHotspot();
+            else
+            {
+                _selectedTarget = PlaceNewHotspot();
+            }
+            _selectedTarget.selected = true;
         }
-        else if ( Input.GetMouseButton(0) && _selectedHotspot != null )
+        else if ( Input.GetMouseButton(0) && _selectedTarget != null )
         {
-            ResizeHotspot( _selectedHotspot );
+            ResizeHotspot( _selectedTarget );
         }
         else if (Input.GetMouseButtonUp(0))
         {
-            _selectedHotspot = null;
+            _selectedTarget.selected = false;
+            _selectedTarget = null;
         }
 
     }
 
-    private ObjectHotspot PlaceNewHotspot()
+    private SpatialTarget PlaceNewHotspot()
     {
         // Get placement point in front of camera based on placepoint visual size
         Ray ray = new Ray( Camera.main.transform.position , Camera.main.transform.forward );
-		ObjectHotspot hotspot = Instantiate( prefab , Vector3.zero , Quaternion.identity ).GetComponent<ObjectHotspot>();
+		SpatialTarget hotspot = Instantiate( prefab , Vector3.zero , Quaternion.identity ).GetComponent<SpatialTarget>();
         Vector3 placePoint = ray.GetPoint( GameObjectUtils.GetBounds( hotspot.gameObject ).size.z );
         hotspot.transform.position = placePoint;
 
-        // Save touch start position for scaling
-        _touchStartPosition = Input.mousePosition;
+        _lastTouchPosition = Input.mousePosition;
 
         return hotspot;
     }
 
-    private void ResizeHotspot( ObjectHotspot hotspot )
+    private void ResizeHotspot( SpatialTarget hotspot )
     {
-        float _change = _touchStartPosition.y - Input.mousePosition.y;
+        float _change = _lastTouchPosition.y - Input.mousePosition.y;
         
-        hotspot.SetVisualScale( _change / 100 );
+        hotspot.SetRelativeVisualScale( _change / 1000 );
+
+        _lastTouchPosition = Input.mousePosition;
     }
 
-    private void EditHotspot(ObjectHotspot hotspot)
+    private void EditHotspot(SpatialTarget hotspot)
     {
         
     }
@@ -81,6 +94,11 @@ public class AppController : MonoBehaviour
     private void RemoveHotspot()
     {
         
+    }
+
+    public void OnPointerDown(PointerEventData data)
+    {
+        Debug.Log( "OnPointerDown() >> count: " + data.clickCount );
     }
 
     private void OnEnable() 
@@ -95,6 +113,7 @@ public class AppController : MonoBehaviour
 
     private void SetEvents()
     {
+        
     }
 
     private void ClearEvents()
