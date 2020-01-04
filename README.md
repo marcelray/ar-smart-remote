@@ -1,2 +1,2 @@
-# ar-smart-remote
-A Unity-based AR phone app used to spatially select and control smart devices. (Proof of concept.)
+# AR Smart Remote (Proof of Concept Prototype)
+This will be a Unity-based AR prototype to demonstrate spatially selecting and controling smart devices.
